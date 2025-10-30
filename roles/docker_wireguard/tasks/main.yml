@@ -131,18 +131,6 @@
   pause:
     seconds: 5
 
-- name: Create local directories
-  file:
-    path: "{{ playbook_dir }}/{{ item }}"
-    state: directory
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-  delegate_to: localhost
-  run_once: true
-  loop:
-    - configs
-    - qrs
-
 - name: Fetch all peer configs to local
   fetch:
     src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.conf
@@ -155,7 +143,7 @@
 - name: Fetch all peer QR codes to local
   fetch:
     src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.png
-    dest: "{{ playbook_dir }}/qrs/peer{{ item }}.png"
+    dest: "{{ playbook_dir }}/configs/peer{{ item }}.png"
     flat: yes
   become: yes
   loop: "{{ peer_count }}"  # Matches PEERS=3
