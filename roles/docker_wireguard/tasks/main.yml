@@ -1,0 +1,161 @@
+---
+# roles/docker_wireguard/tasks/main.yml
+
+- name: Install system prerequisites
+  become: yes
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+      - python3-setuptools
+    state: present
+    update_cache: yes
+
+- name: Detect architecture
+  set_fact:
+    docker_arch: >-
+      {{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}
+
+- name: Add Docker GPG key
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+    keyring: /usr/share/keyrings/docker-archive-keyring.gpg
+
+- name: Add Docker repository
+  become: yes
+  apt_repository:
+    repo: >-
+      deb [arch={{ docker_arch }} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
+      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+    filename: docker
+    update_cache: yes
+
+- name: Install Docker Engine
+  become: yes
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+    update_cache: yes
+  register: docker_install
+  retries: 3
+  delay: 5
+  until: docker_install is succeeded
+
+- name: Ensure Docker is running
+  become: yes
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Add user to docker group
+  become: yes
+  user:
+    name: "{{ ansible_user | default('ubuntu') }}"
+    groups: docker
+    append: yes
+  when: ansible_user is defined
+
+# ---------- Install Python Docker SDK (REQUIRED) ----------
+- name: Install Python Docker SDK via pip
+  become: yes
+  pip:
+    name: 
+      - docker
+      - docker-compose
+    executable: pip3
+  environment:
+    PIP_BREAK_SYSTEM_PACKAGES: "1"  # Ubuntu 22.04+ safety
+
+# ---------- Docker Compose plugin ----------
+- name: Create plugin directory
+  become: yes
+  file:
+    path: /usr/local/lib/docker/cli-plugins
+    state: directory
+    mode: '0755'
+
+- name: Check if docker compose plugin exists
+  become: yes
+  stat:
+    path: /usr/local/lib/docker/cli-plugins/docker-compose
+  register: compose_bin
+
+- name: Download Docker Compose v2.40.3 plugin
+  become: yes
+  get_url:
+    url: >-
+      https://github.com/docker/compose/releases/download/v2.40.1/docker-compose-linux-x86_64
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    mode: '0755'
+  when: not compose_bin.stat.exists
+
+- name: Verify Docker Compose
+  command: docker compose version
+  register: _compose_ver
+  changed_when: false
+
+# ---------- Application ----------
+- name: Create app directory
+  become: yes
+  file:
+    path: /opt/wireguard
+    state: directory
+    mode: '0755'
+
+- name: Copy docker-compose.yml
+  become: yes
+  copy:
+    src: docker-compose.yml
+    dest: /opt/wireguard/docker-compose.yml
+    mode: '0644'
+  notify: restart docker compose
+
+- name: Start WireGuard via docker compose
+  become: yes
+  ansible.builtin.command: docker compose -f docker-compose.yml up -d
+  args:
+    chdir: /opt/wireguard
+  notify: restart docker compose
+
+- name: Wait for WireGuard configs to be generated
+  pause:
+    seconds: 5
+
+- name: Create local directories
+  file:
+    path: "{{ playbook_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  delegate_to: localhost
+  run_once: true
+  loop:
+    - configs
+    - qrs
+
+- name: Fetch all peer configs to local
+  fetch:
+    src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.conf
+    dest: "{{ playbook_dir }}/configs/peer{{ item }}.conf"
+    flat: yes
+  become: yes
+  loop: "{{ peer_count }}"  # Matches PEERS=3
+  
+
+- name: Fetch all peer QR codes to local
+  fetch:
+    src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.png
+    dest: "{{ playbook_dir }}/qrs/peer{{ item }}.png"
+    flat: yes
+  become: yes
+  loop: "{{ peer_count }}"  # Matches PEERS=3

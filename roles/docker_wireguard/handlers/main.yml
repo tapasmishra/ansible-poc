@@ -1,0 +1,8 @@
+# roles/docker_wireguard/handlers/main.yml
+---
+- name: restart docker compose
+  become: yes
+  ansible.builtin.command: docker compose -f docker-compose.yml up -d
+  args:
+    chdir: /opt/wireguard
+  become: yes

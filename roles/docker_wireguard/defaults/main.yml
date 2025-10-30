@@ -1,0 +1,4 @@
+# defaults/main.yml
+docker_compose_version: "v2.24.6"
+app_dir: /opt/wireguard
+peer_count: "{{ range(0, 3) | list }}"
