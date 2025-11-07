@@ -20,7 +20,7 @@
         mode: '0755'
         owner: 'ubuntu'
         group: 'ubuntu'
-        
+
     - name: Create base directory for WireGuard configs on remote VM
       ansible.builtin.file:
         path: /opt/wireguard/configs/
@@ -37,6 +37,9 @@
         owner: 'ubuntu'
         group: 'ubuntu'
 
+    - name: Force Ansible to re-evaluate remote host state before copying
+      meta: flush_handlers
+      
     - name: Copy the server WireGuard configuration file (wg_server_config_path)
       ansible.builtin.copy:
         src: "{{ wg_server_config_path }}"
