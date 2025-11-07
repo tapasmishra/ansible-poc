@@ -1,7 +1,7 @@
 ---
 - name: Install Docker Compose
   hosts: all_vpn_servers
-  gather_facts: no
+  gather_facts: yes
   become: yes
 
   roles:
@@ -18,7 +18,7 @@
         path: /opt/wireguard/configs/
         state: directory
         mode: '0755'
-        user: 'ubuntu'
+        owner: 'ubuntu'
         group: 'ubuntu'
 
     - name: Create base directory for WireGuard client configs on remote VM
@@ -26,7 +26,7 @@
         path: /opt/wireguard/clients/
         state: directory
         mode: '0755'
-        user: 'ubuntu'
+        owner: 'ubuntu'
         group: 'ubuntu'
 
     - name: Copy the server WireGuard configuration file (wg_server_config_path)
