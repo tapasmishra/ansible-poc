@@ -39,7 +39,11 @@
 
     - name: Force Ansible to re-evaluate remote host state before copying
       meta: flush_handlers
-      
+
+    - name: Print the value of wg_server_config_path using msg
+      ansible.builtin.debug:
+        msg: "The WireGuard server config path is: {{ wg_server_config_path }}"
+        
     - name: Copy the server WireGuard configuration file (wg_server_config_path)
       ansible.builtin.copy:
         src: "{{ wg_server_config_path }}"
