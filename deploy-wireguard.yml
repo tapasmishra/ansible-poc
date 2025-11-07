@@ -1,7 +1,56 @@
 ---
-- name: Deploy WireGuard via Docker Compose
-  hosts: vpn_servers
+- name: Install Docker Compose
+  hosts: all_vpn_servers
+  gather_facts: no
   become: yes
 
   roles:
     - docker_wireguard
+
+- name: 1. Deploy Container Configuration Files
+  hosts: endpoint_servers, edge_servers, vpc_servers, intermediate
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: Create base directory for WireGuard configs on remote VM
+      ansible.builtin.file:
+        path: /etc/wireguard/configs/
+        state: directory
+        mode: '0755'
+
+    - name: Copy the server WireGuard configuration file (wg_server_config_path)
+      ansible.builtin.copy:
+        src: "{{ wg_server_config_path }}"
+        dest: "/opt/wireguard/configs/{{ wg_server_config_path | basename }}"
+        mode: '0644'
+      delegate_to: localhost
+
+    - name: Copy the associated client configuration directory (if wg_clients_dir_path is set)
+      ansible.builtin.copy:
+        src: "{{ wg_clients_dir_path }}/" 
+        dest: "/opt/wireguard/clients/{{ wg_server_config_path | basename | replace('.conf', '') }}/"
+        mode: '0755'
+      delegate_to: localhost
+      when: wg_clients_dir_path | length > 0
+
+- name: 2. Deploy and Start Docker Compose Services
+  hosts: all_vpn_servers
+  gather_facts: no
+  become: yes
+
+  vars:
+    unique_vms: "{{ groups['all_vpn_servers'] | map('extract', hostvars, 'ansible_host') | unique | list }}"
+  when: inventory_hostname in unique_vms
+
+  tasks:
+    - name: Copy the VM's Docker Compose file
+      ansible.builtin.copy:
+        src: "final_vpn_configs/{{ inventory_hostname }}_docker-compose.yml"
+        dest: "/opt/wireguard/docker-compose.yml"
+      delegate_to: localhost
+
+    - name: Start WireGuard via docker compose
+      ansible.builtin.command: docker compose -f docker-compose.yml up -d
+      args:
+        chdir: /opt/wireguard

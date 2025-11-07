@@ -112,38 +112,38 @@
     state: directory
     mode: '0755'
 
-- name: Copy docker-compose.yml
-  become: yes
-  copy:
-    src: docker-compose.yml
-    dest: /opt/wireguard/docker-compose.yml
-    mode: '0644'
-  notify: restart docker compose
+# - name: Copy docker-compose.yml
+#   become: yes
+#   copy:
+#     src: docker-compose.yml
+#     dest: /opt/wireguard/docker-compose.yml
+#     mode: '0644'
+#   notify: restart docker compose
 
-- name: Start WireGuard via docker compose
-  become: yes
-  ansible.builtin.command: docker compose -f docker-compose.yml up -d
-  args:
-    chdir: /opt/wireguard
-  notify: restart docker compose
+# - name: Start WireGuard via docker compose
+#   become: yes
+#   ansible.builtin.command: docker compose -f docker-compose.yml up -d
+#   args:
+#     chdir: /opt/wireguard
+#   notify: restart docker compose
 
-- name: Wait for WireGuard configs to be generated
-  pause:
-    seconds: 5
+# - name: Wait for WireGuard configs to be generated
+#   pause:
+#     seconds: 5
 
-- name: Fetch all peer configs to local
-  fetch:
-    src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.conf
-    dest: "{{ playbook_dir }}/configs/peer{{ item }}.conf"
-    flat: yes
-  become: yes
-  loop: "{{ peer_count }}"  # Matches PEERS=3
+# - name: Fetch all peer configs to local
+#   fetch:
+#     src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.conf
+#     dest: "{{ playbook_dir }}/configs/peer{{ item }}.conf"
+#     flat: yes
+#   become: yes
+#   loop: "{{ peer_count }}"  # Matches PEERS=3
   
 
-- name: Fetch all peer QR codes to local
-  fetch:
-    src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.png
-    dest: "{{ playbook_dir }}/configs/peer{{ item }}.png"
-    flat: yes
-  become: yes
-  loop: "{{ peer_count }}"  # Matches PEERS=3
+# - name: Fetch all peer QR codes to local
+#   fetch:
+#     src: /opt/wireguard/config/peer{{ item }}/peer{{ item }}.png
+#     dest: "{{ playbook_dir }}/configs/peer{{ item }}.png"
+#     flat: yes
+#   become: yes
+#   loop: "{{ peer_count }}"  # Matches PEERS=3
