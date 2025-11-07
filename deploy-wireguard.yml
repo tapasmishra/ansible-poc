@@ -72,7 +72,7 @@
   tasks:
     - name: Copy the VM's Docker Compose file
       ansible.builtin.copy:
-        src: "final_vpn_configs/{{ inventory_hostname }}_docker-compose.yml"
+        src: "./{{ inventory_hostname }}_docker-compose.yml"
         dest: "/opt/wireguard/docker-compose.yml"
       delegate_to: localhost
       when: inventory_hostname in unique_vms
