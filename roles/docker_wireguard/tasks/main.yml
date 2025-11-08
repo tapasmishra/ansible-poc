@@ -111,6 +111,8 @@
     path: /opt/wireguard
     state: directory
     mode: '0755'
+    owner: 'ubuntu'
+    group: 'ubuntu'
 
 # - name: Copy docker-compose.yml
 #   become: yes
