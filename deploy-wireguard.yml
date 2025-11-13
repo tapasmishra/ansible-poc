@@ -64,9 +64,18 @@
         src: "./{{ inventory_hostname }}_docker-compose.yml"
         dest: "/opt/wireguard/docker-compose.yml"
       when: inventory_hostname in unique_vms
+      notify: Restart wireguard_container
       become: no 
 
     - name: Start / Restart services
+      community.docker.docker_compose_v2:
+        project_src: /opt/wireguard
+        build: never
+        state: present
+      when: inventory_hostname in unique_vms
+
+  handlers:
+    - name: Restart wireguard_container
       community.docker.docker_compose_v2:
         project_src: /opt/wireguard
         build: never
