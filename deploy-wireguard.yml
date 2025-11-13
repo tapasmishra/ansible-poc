@@ -66,8 +66,9 @@
       when: inventory_hostname in unique_vms
       become: no 
 
-    - name: Start WireGuard via docker compose
-      ansible.builtin.command: docker compose -f docker-compose.yml up -d
-      args:
-        chdir: /opt/wireguard
+    - name: Start / Restart services
+      community.docker.docker_compose_v2:
+        project_src: /opt/wireguard
+        build: never
+        state: restarted
       when: inventory_hostname in unique_vms
