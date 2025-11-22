@@ -43,12 +43,12 @@
         dest: "/opt/wireguard/configs/{{ wg_server_config_path | basename }}"
         mode: '0644'
 
-    - name: Copy the associated client configuration directory (if wg_clients_dir_path is set)
-      ansible.builtin.copy:
-        src: "{{ wg_clients_dir_path }}/" 
-        dest: "/opt/wireguard/clients/{{ wg_server_config_path | basename | replace('.conf', '') }}/"
-        mode: '0755'
-      when: wg_clients_dir_path | length > 0
+    # - name: Copy the associated client configuration directory (if wg_clients_dir_path is set)
+    #   ansible.builtin.copy:
+    #     src: "{{ wg_clients_dir_path }}/" 
+    #     dest: "/opt/wireguard/clients/{{ wg_server_config_path | basename | replace('.conf', '') }}/"
+    #     mode: '0755'
+    #   when: wg_clients_dir_path | length > 0
 
 - name: 2. Deploy and Start Docker Compose Services
   hosts: all_vpn_servers
