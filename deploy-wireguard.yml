@@ -43,6 +43,21 @@
         dest: "/opt/wireguard/configs/{{ wg_server_config_path | basename }}"
         mode: '0644'
 
+    - name: Create base directory for bird  configs on remote VM
+      ansible.builtin.file:
+        path: /opt/wireguard/bird/
+        state: directory
+        mode: '0755'
+        owner: 'ubuntu'
+        group: 'ubuntu'
+      become: yes
+
+    - name: Copy the server bird configuration file (wg_bird_config_path)
+      ansible.builtin.copy:
+        src: "{{ wg_bird_config_path }}"
+        dest: "/opt/wireguard/bird/{{ wg_bird_config_path | basename }}"
+        mode: '0644'
+        
     # - name: Copy the associated client configuration directory (if wg_clients_dir_path is set)
     #   ansible.builtin.copy:
     #     src: "{{ wg_clients_dir_path }}/" 
